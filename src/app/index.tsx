@@ -1,98 +1,141 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import {
+    FlatList,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import ToDoInputs from "../components/ToDoInputs";
+import ToDoItem from "../components/ToDoItems";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
+interface ToDo {
+  id: string;
+  text: string;
 }
 
-export default function HomeScreen() {
+export default function Index() {
+  const [toDoItems, setToDoItems] = useState<ToDo[]>([]);
+  const [modalIsVisible, setModalIsVisible] = useState(false);
+  function startAddItemHandler() {
+    setModalIsVisible(true);
+  }
+  function endAddItemHandler() {
+    setModalIsVisible(false);
+  }
+
+  function addItem(text: string) {
+    if (text.trim().length === 0) return;
+    setToDoItems((current) => [
+      ...current,
+      { text: text.trim(), id: Math.random().toString() },
+    ]);
+    endAddItemHandler();
+  }
+
+  function deleteItem(id: string) {
+    setToDoItems((current) => current.filter((item) => item.id !== id));
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+    <View style={styles.topContainer}>
+      <View style={styles.headerContainer}>
+        <View style={styles.headerLeft}>
+          <Image
+            style={styles.image}
+            source={require("../../assets/images/OU_icon.png")}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <View style={styles.headerCenter} />
+
+        <View style={styles.headerRight}>
+          <Text style={styles.title}>To Do List</Text>
+        </View>
+      </View>
+
+      <ToDoInputs
+        visible={modalIsVisible}
+        onAddItem={addItem}
+        onCancel={endAddItemHandler}
+      />
+
+      <View style={styles.itemsContainer}>
+        <FlatList
+          data={toDoItems}
+          renderItem={(itemData) => (
+            <ToDoItem
+              text={itemData.item.text}
+              onDeleteItem={() => deleteItem(itemData.item.id)}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+        />
+      </View>
+      <Pressable style={styles.addButton} onPress={startAddItemHandler}>
+        <Text style={styles.buttonText}>To Do List</Text>
+      </Pressable>
+      {/* <Button style={styles.addButton} title="Click to Add" onPress={startAddItemHandler}></Button> */}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  topContainer: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    paddingTop: 75,
+    paddingHorizontal: 15,
+    backgroundColor: "#FDF9D8",
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerLeft: {
+    width: "25%",
+  },
+  headerCenter: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  },
+  headerRight: {
+    marginLeft: 14,
   },
   title: {
-    textAlign: 'center',
+    fontSize: 24,
+    color: "#841617",
+    fontWeight: "bold",
+    textAlign: "center",
   },
-  code: {
-    textTransform: 'uppercase',
+  itemsContainer: {
+    // flex: 1,
+    backgroundColor: "#ffff",
+    width: "100%",
+    height: "60%",
+    paddingHorizontal: 15,
+    marginTop: 20,
+    marginBottom: 20,
+    borderRadius: 10,
+    paddingVertical: 10,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  addButton: {
+    margin: 20,
+    padding: 20,
+    borderWidth: 2,
+    backgroundColor: "#841617",
+    borderColor: "#ffff",
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 20,
+    color: "#ffff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  image: {
+    width: 75,
+    height: 75,
+    resizeMode: "contain",
   },
 });
